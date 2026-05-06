@@ -28,7 +28,7 @@ Redsys (Servired / Sermepa) payment gateway integration for Botble CMS.
 - `botble/payment` (plugin dependency)
 - `ssheduardo/redsys-laravel` `~1.5.0` (Composer dependency)
 
-This plugin uses dependency placement Option A: Redsys SDK is declared in the plugin package and installed by Composer in the application `vendor/` directory.
+Redsys SDK is declared in the plugin package and installed by Composer in the application `vendor/` directory.
 
 ## Installation
 
@@ -103,5 +103,5 @@ Redsys sends server-to-server callbacks and cannot provide Laravel CSRF tokens.
 
 ## License
 
-Proprietary or project-defined. Add a `LICENSE` file before public release.
+MIT
 

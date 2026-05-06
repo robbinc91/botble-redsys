@@ -1,0 +1,23 @@
+{
+    "name": "botble/redsys",
+    "description": "Redsys Payment Gateway for Botble CMS",
+    "keywords": [
+        "botble",
+        "redsys",
+        "payment-gateway"
+    ],
+    "homepage": "https://github.com/robbinc91/botble-redsys",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Robin Cabeza Ruiz",
+            "email": "robbinc91@gmail.com",
+            "role": "developer"
+        }
+    ],
+    "type": "package",
+    "require": {
+        "php": ">=8.2.11",
+        "ssheduardo/redsys-laravel": "~1.5.0"
+    }
+}

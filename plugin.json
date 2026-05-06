@@ -1,0 +1,11 @@
+{
+    "id": "botble/redsys",
+    "name": "Redsys Payment Gateway",
+    "namespace": "Botble\\Redsys\\",
+    "provider": "Botble\\Redsys\\Providers\\RedsysServiceProvider",
+    "author": "Robin Cabeza Ruiz",
+    "url": "",
+    "version": "1.0.0",
+    "description": "Redsys (Servired / Sermepa) payment gateway integration",
+    "require": ["botble/payment"]
+}

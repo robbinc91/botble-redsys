@@ -2,106 +2,125 @@
 
 Redsys (Servired / Sermepa) payment gateway integration for Botble CMS.
 
-## Package Information
+## Package metadata
 
-- Package: `botble/redsys`
-- Author: Robin Cabeza Ruiz
-- Plugin ID: `botble/redsys`
-- Namespace: `Botble\Redsys\`
+| Field | Value |
+|--------|--------|
+| **Composer package** | `robbinc91/botble-redsys` |
+| **Homepage / source** | [github.com/robbinc91/botble-redsys](https://github.com/robbinc91/botble-redsys) |
+| **Plugin ID** (`plugin.json`) | `robbinc91/botble-redsys` |
+| **PHP namespace** | `Botble\Redsys\` |
+| **Author** | Robin Cabeza Ruiz |
+| **License** | MIT |
 
 ## Features
 
-- Adds Redsys as a checkout payment method.
-- Adds Redsys configuration section in Botble payment settings.
-- Handles Redsys callback flow with signature validation.
-- Processes successful payments through Botble payment hooks.
-- Includes duplicate-payment protection (idempotency).
+- Redsys as a checkout payment method (with Botble `payment` plugin).
+- Redsys settings under **Admin → Payments**.
+- Signed notification handling and optional OK-return verification.
+- Successful payments fire Botble’s `PAYMENT_ACTION_PAYMENT_PROCESSED` hook.
+- Idempotent processing to reduce duplicate payment rows.
 
 ## Requirements
 
-- Botble CMS with `botble/payment` plugin active.
-- PHP and Laravel versions compatible with your Botble release.
-- HTTPS-enabled public domain for production callbacks.
+- **PHP** `>= 8.2.11` (see `composer.json`).
+- **Botble** with **`botble/payment`** plugin installed and active.
+- **HTTPS** on production for callback URLs.
+- Redsys **notification URL** must be reachable from Redsys servers.
 
 ## Dependencies
 
-- `botble/payment` (plugin dependency)
-- `ssheduardo/redsys-laravel` `~1.5.0` (Composer dependency)
+- **`botble/payment`** — required Botble plugin (`plugin.json`).
+- **`ssheduardo/redsys-laravel`** `~1.5.0` — Redsys Laravel SDK (`composer.json`).
 
-Redsys SDK is declared in the plugin package and installed by Composer in the application `vendor/` directory.
+### Composer vs `vendor/robbinc91`
+
+If you only copy this plugin into **`platform/plugins/redsys`** and run **`composer update`** at the project root, Composer installs **merged dependencies** (e.g. `ssheduardo/redsys-laravel`) into **`vendor/`**. It does **not** necessarily create **`vendor/robbinc91/botble-redsys`** unless the root app **`composer require`s** `robbinc91/botble-redsys`. That layout is normal for Botble plugins deployed as files under `platform/plugins/`.
+
+**Option A (merge-plugin):** SDK is declared in this plugin’s `composer.json` and resolved into the app’s root `vendor/` after `composer update`.
 
 ## Installation
 
-### 1. Add the plugin
+### Method A — Copy into Botble (most common)
 
-Place the plugin under:
+1. Put the plugin folder here (folder name **`redsys`**):
 
-`platform/plugins/redsys`
+   `platform/plugins/redsys`
 
-### 2. Install Composer dependencies
+2. From the **project root**:
 
-From project root:
+   ```bash
+   composer update
+   ```
+
+3. Activate using the **directory name** under `platform/plugins` (here **`redsys`**). Botble’s CLI strips any `vendor/` prefix but still resolves the folder — **`cms:plugin:activate botble-redsys` would not match** if your folder is `redsys`.
+
+   ```bash
+   php artisan cms:plugin:activate redsys
+   ```
+
+   Or use **Admin → Plugins**.
+
+### Method B — Install as Composer package (optional)
+
+If the package is on Packagist or a VCS repository configured in the root `composer.json`:
 
 ```bash
-composer update
+composer require robbinc91/botble-redsys:^1.0
 ```
 
-### 3. Activate plugin
-
-From Admin -> Plugins, or:
-
-```bash
-php artisan cms:plugin:activate redsys
-```
+You still need the plugin **discovered by Botble** under `platform/plugins/redsys` (copy, symlink, or your deployment strategy). Botble scans **direct children** of `platform/plugins`, not arbitrary nested vendor paths.
 
 ## Configuration
 
-Go to **Admin -> Payments**, enable Redsys, then configure:
+**Admin → Payments** — enable Redsys and set:
 
 - Merchant code (FUC)
 - Terminal
 - SHA-256 secret key
-- Environment (`test` / `live`)
+- Environment: `test` or `live`
 - Trade name
 
-## Redsys Endpoints
+## HTTP routes
 
-The plugin registers:
+| Method | Path | Name |
+|--------|------|------|
+| GET | `/payment/redsys/checkout` | `payments.redsys.checkout` |
+| POST | `/payment/redsys/notification` | `payments.redsys.notification` |
+| GET | `/payment/redsys/ok` | `payments.redsys.ok` |
+| GET | `/payment/redsys/ko` | `payments.redsys.ko` |
 
-- `GET /payment/redsys/checkout`
-- `POST /payment/redsys/notification`
-- `GET /payment/redsys/ok`
-- `GET /payment/redsys/ko`
+Configure Redsys backoffice (example):
 
-In production, configure Redsys backoffice with:
+- **Notification:** `https://your-domain.com/payment/redsys/notification`
+- **OK:** `https://your-domain.com/payment/redsys/ok`
+- **KO:** `https://your-domain.com/payment/redsys/ko`
 
-- Notification URL: `https://your-domain.com/payment/redsys/notification`
-- OK URL: `https://your-domain.com/payment/redsys/ok`
-- KO URL: `https://your-domain.com/payment/redsys/ko`
+## CSRF
 
-## CSRF Exclusion
+Exclude the notification route from CSRF verification (Redsys server POST has no Laravel token):
 
-Exclude this route from CSRF protection in your app:
+- Path prefix / URI: **`payment/redsys/notification`**
 
-- `payment/redsys/notification`
+(Typically in `app/Http/Middleware/VerifyCsrfToken.php` `$except`.)
 
-Redsys sends server-to-server callbacks and cannot provide Laravel CSRF tokens.
+## Integration behaviour
 
-## Botble Integration Notes
+- **Notification** (`POST …/notification`) is the primary authoritative confirmation.
+- **OK** return can assist when session/callback ordering differs; signatures are verified when Redsys sends parameters.
+- Hotel/booking flows that listen for `PAYMENT_ACTION_PAYMENT_PROCESSED` behave like other gateways (e.g. Stripe) once this hook runs.
 
-- Successful Redsys transactions trigger `PAYMENT_ACTION_PAYMENT_PROCESSED`.
-- Notification callback is the primary confirmation path.
-- OK return route provides a fallback processing path when needed.
+## Verify installation
 
-## Quick Test Checklist
+```bash
+php artisan route:list --name=payments.redsys
+```
 
-1. Enable Redsys in test mode.
-2. Complete a test checkout.
-3. Confirm callback hits `/payment/redsys/notification`.
-4. Confirm payment/order data is persisted in Botble.
-5. Switch to live credentials after successful validation.
+Expect four routes named `payments.redsys.*`.
 
-## License
+Then: test mode checkout → confirm notification → confirm payment and order/booking linkage → switch to live credentials.
 
-MIT
+## Translations
+
+Language files live under `resources/lang/{locale}/redsys.php` (e.g. `en`, `es`).
 

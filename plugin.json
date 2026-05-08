@@ -5,7 +5,7 @@
     "provider": "Botble\\Redsys\\Providers\\RedsysServiceProvider",
     "author": "Robin Cabeza Ruiz",
     "url": "",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "Redsys (Servired / Sermepa) payment gateway integration",
     "require": ["botble/payment"]
 }

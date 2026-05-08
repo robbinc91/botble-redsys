@@ -1,5 +1,5 @@
 {
-    "id": "botble/redsys",
+    "id": "robbinc91/botble-redsys",
     "name": "Redsys Payment Gateway",
     "namespace": "Botble\\Redsys\\",
     "provider": "Botble\\Redsys\\Providers\\RedsysServiceProvider",
